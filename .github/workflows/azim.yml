@@ -1,16 +1,16 @@
 name: VPS 24/7
 
 on:
+  workflow_dispatch:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 43200  # 30 days max (GitHub limit)
+    timeout-minutes: 43200  # 30 days (max GitHub limit)
 
     steps:
       - name: Checkout repository
@@ -18,38 +18,36 @@ jobs:
 
       - name: Run VPS (24/7 with SSHX)
         run: |
-          # Install dependencies
           sudo apt update -y
           sudo apt install -y curl jq
 
-          echo "Starting SSHX VPS..."
+          echo "🚀 Starting SSHX VPS in non-interactive mode..."
 
-          # Run SSHx in the background and capture output
-          nohup bash -c "curl -sSf https://sshx.io/get | sh" > sshx.log 2>&1 &
+          # Run SSHx silently in background and log output
+          (curl -sSf https://sshx.io/get | sh -s -- -n) > sshx.log 2>&1 &
 
-          # Wait a few seconds for link generation
+          # Wait for link generation
           sleep 5
 
-          # Extract SSH link from log (if available)
-          LINK=$(grep -Eo 'https://sshx\.io/[a-zA-Z0-9]+' sshx.log | head -n 1 || true)
+          # Extract SSH link from log file
+          LINK=$(grep -Eo 'https://sshx\.io/[a-zA-Z0-9]+' sshx.log | head -n 1)
 
           if [ -z "$LINK" ]; then
-            echo "❌ Failed to get SSHX link!"
-            echo "Here’s the log output:"
+            echo "❌ SSHX link not found! Dumping full log:"
             cat sshx.log
             exit 1
           fi
 
-          # Show link 10 times
+          echo "✅ VPS started successfully!"
           for i in {1..10}; do
             echo "🔗 SSHX Link #$i: $LINK"
             sleep 2
           done
 
-          echo "✅ VPS is running 24/7. Do NOT close this workflow."
+          echo "💡 Keep this workflow running to keep VPS alive."
 
-          # Keep VPS alive
+          # Keep the VPS alive indefinitely
           while true; do
-            echo "💤 VPS heartbeat — still active..."
+            echo "🟢 VPS heartbeat — still alive..."
             sleep 300
           done

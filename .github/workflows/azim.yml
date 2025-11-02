@@ -1,6 +1,5 @@
-name: VPS
+name: VPS 24/7
 
-# Controls when the workflow will run
 on:
   push:
     branches: [ "main" ]
@@ -11,10 +10,28 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 43200  # 30 days max (GitHub limit)
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run VPS
-        run: curl -sSf https://sshx.io/get | sh
+      - name: Run VPS (24/7 with SSHX)
+        run: |
+          # Start SSHx and extract link
+          LINK=$(curl -sSf https://sshx.io/get | sh | grep -Eo 'https://sshx\.io/[a-zA-Z0-9]+')
+          
+          # Show the SSHx link 10 times
+          for i in {1..10}; do
+            echo "🔗 SSHX Link #$i: $LINK"
+            sleep 2
+          done
+          
+          echo "✅ VPS is now live and will stay running 24/7."
+          echo "Keep this workflow open to maintain the session."
+
+          # Keep VPS alive indefinitely
+          while true; do
+            echo "💤 VPS heartbeat — still running..."
+            sleep 300
+          done

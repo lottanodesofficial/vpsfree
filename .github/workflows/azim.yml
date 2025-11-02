@@ -18,20 +18,38 @@ jobs:
 
       - name: Run VPS (24/7 with SSHX)
         run: |
-          # Start SSHx and extract link
-          LINK=$(curl -sSf https://sshx.io/get | sh | grep -Eo 'https://sshx\.io/[a-zA-Z0-9]+')
-          
-          # Show the SSHx link 10 times
+          # Install dependencies
+          sudo apt update -y
+          sudo apt install -y curl jq
+
+          echo "Starting SSHX VPS..."
+
+          # Run SSHx in the background and capture output
+          nohup bash -c "curl -sSf https://sshx.io/get | sh" > sshx.log 2>&1 &
+
+          # Wait a few seconds for link generation
+          sleep 5
+
+          # Extract SSH link from log (if available)
+          LINK=$(grep -Eo 'https://sshx\.io/[a-zA-Z0-9]+' sshx.log | head -n 1 || true)
+
+          if [ -z "$LINK" ]; then
+            echo "❌ Failed to get SSHX link!"
+            echo "Here’s the log output:"
+            cat sshx.log
+            exit 1
+          fi
+
+          # Show link 10 times
           for i in {1..10}; do
             echo "🔗 SSHX Link #$i: $LINK"
             sleep 2
           done
-          
-          echo "✅ VPS is now live and will stay running 24/7."
-          echo "Keep this workflow open to maintain the session."
 
-          # Keep VPS alive indefinitely
+          echo "✅ VPS is running 24/7. Do NOT close this workflow."
+
+          # Keep VPS alive
           while true; do
-            echo "💤 VPS heartbeat — still running..."
+            echo "💤 VPS heartbeat — still active..."
             sleep 300
           done
